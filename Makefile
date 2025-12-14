@@ -1,5 +1,5 @@
-TARGET = zynqv2xfinal
-SRCS =  zynqv2xfinal.c \
+TARGET = copilotmain
+SRCS =  copilotmain.c \
 	PmodGPS.c \
 	xuartns550.c xuartns550_l.c xuartns550_stats.c xuartns550_selftest.c xuartns550_options.c\
 	PmodNAV.c \
