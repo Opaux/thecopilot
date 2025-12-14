@@ -585,7 +585,7 @@ void* ledThreadFunc(void* arg){
     int patternState = 0;
     int flashState = 0;
     TelemetryData localData;
-    volatile uint32_t *ledDataReg; // FIX: Changed from void* to uint32_t*
+    volatile uint32_t *ledDataReg; 
 
     while(1){
         // Read Shared Data
@@ -641,49 +641,42 @@ void* gpsThreadFunc(void* arg) {
     char nsDir, ewDir;
 
     while (1) {
-        // Step 1: Poll for data
+        // Poll for data
         GPS_getData(&GPSInst); //
 
-        // Step 2: Check if a full sentence was received
-        if (GPSInst.ping) { //
-
-            // Step 3: Parse the raw string into the driver's structs
-            GPS_formatSentence(&GPSInst); //
+        //Check if a full sentence was received
+        if (GPSInst.ping) { 
+            GPS_formatSentence(&GPSInst); 
 
             // Retrieve strings from the driver struct
-            latStr = GPS_getLatitude(&GPSInst); //
-            lonStr = GPS_getLongitude(&GPSInst); //
+            latStr = GPS_getLatitude(&GPSInst); 
+            lonStr = GPS_getLongitude(&GPSInst); 
 
             // Retrieve direction characters (N/S, E/W)
-            nsDir = GPSInst.GGAdata.NS; //
-            ewDir = GPSInst.GGAdata.EW; //
+            nsDir = GPSInst.GGAdata.NS; 
+            ewDir = GPSInst.GGAdata.EW; 
 
-            // Step 5: Convert NMEA strings to Decimal Degrees
-            // Note: If the GPS sends empty strings (common when cold), these will result in 0.0
+            // Convert NMEA strings to Decimal Degrees
             tempLat = convertStringCoordToDecimal(latStr, nsDir);
             tempLon = convertStringCoordToDecimal(lonStr, ewDir);
 
             // Update Shared Data Safely
             pthread_mutex_lock(&dataMutex);
-
-            // We still update the 'gpsFix' flag just for the UI colors,
-            // but we ALWAYS update the coordinates now.
-            if (GPS_isFixed(&GPSInst)) { //
+            // Update the 'gpsFix' flag just for the UI colors
+            if (GPS_isFixed(&GPSInst)) { 
                 sharedData.gpsFix = 1;
             } else {
                 sharedData.gpsFix = 0;
             }
-
             sharedData.latitude = tempLat;
             sharedData.longitude = tempLon;
-
             pthread_mutex_unlock(&dataMutex);
 
             // Debug print to confirm data is flowing even without fix
             printf("GPS Raw: %s | Lat: %f Lon: %f\n", GPSInst.recv, tempLat, tempLon);
 
             // Reset the ping flag
-            GPSInst.ping = 0; //
+            GPSInst.ping = 0; 
         }
 
         usleep(1000);
@@ -700,7 +693,7 @@ void* webThreadFunc(void* arg) {
     char response_buffer[4096];
     TelemetryData localData;
 
-    // --- Socket Setup ---
+    // Socket Setup
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) { perror("Web socket failed"); exit(EXIT_FAILURE); }
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) { perror("setsockopt"); exit(EXIT_FAILURE); }
     address.sin_family = AF_INET;
@@ -709,7 +702,6 @@ void* webThreadFunc(void* arg) {
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) { perror("Web bind failed"); exit(EXIT_FAILURE); }
     if (listen(server_fd, 3) < 0) { perror("listen"); exit(EXIT_FAILURE); }
     printf("Web Server started on Port 8080\n");
-    // --------------------
 
     while(1) {
         if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
@@ -768,8 +760,6 @@ void* webThreadFunc(void* arg) {
                      "      document.getElementById('gx').innerText = data.gx; document.getElementById('gy').innerText = data.gy; document.getElementById('gz').innerText = data.gz;"
                      "      document.getElementById('mx').innerText = data.mx; document.getElementById('my').innerText = data.my; document.getElementById('mz').innerText = data.mz;"
                      "      document.getElementById('tf').innerText = data.tf; document.getElementById('pr').innerText = data.pr;"
-
-                     // --- CHANGED: Updates ALWAYS occur now, even without fix ---
                      "      document.getElementById('txt-lat').innerText = data.lat.toFixed(6);"
                      "      document.getElementById('txt-lon').innerText = data.lon.toFixed(6);"
 
@@ -781,7 +771,7 @@ void* webThreadFunc(void* arg) {
                      "          document.getElementById('gps-status').innerText = 'GPS LOCKED';"
                      "          document.getElementById('gps-status').style.color = 'green';"
                      "      } else {"
-                     // We still show 'Searching' on the status, but the raw numbers above will update
+                     // Still show'Searching' on the status, but the raw numbers above will update
                      "          document.getElementById('gps-status').innerText = 'SEARCHING (Raw Data Shown)...';"
                      "          document.getElementById('gps-status').style.color = 'orange';"
                      "      }"
